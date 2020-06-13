@@ -18,6 +18,7 @@ var (
 	height  int
 	width   int
 	fps     float64
+	mapType string
 )
 
 func init() {
@@ -25,6 +26,7 @@ func init() {
 	rootCmd.PersistentFlags().IntVar(&height, "height", 80, "The height of the arena")
 	rootCmd.PersistentFlags().IntVar(&width, "width", 200, "The width of the arena")
 	rootCmd.PersistentFlags().Float64Var(&fps, "framerate", 30, "The framerate of the game for termloop")
+	rootCmd.PersistentFlags().StringVar(&mapType, "map-type", "rooms", "The type of map. Must be one of (bsp|drunkwalk|rooms)")
 
 	//Commands
 	rootCmd.AddCommand(versionCmd)
@@ -90,6 +92,6 @@ var startCmd = &cobra.Command{
 	Long:    "Starts the game",
 	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
-		game.New(width, height, fps).Start()
+		game.New(width, height, fps, mapType).Start()
 	},
 }
