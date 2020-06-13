@@ -25,7 +25,7 @@ func init() {
 	// Flags
 	rootCmd.PersistentFlags().IntVar(&height, "height", 80, "The height of the arena")
 	rootCmd.PersistentFlags().IntVar(&width, "width", 200, "The width of the arena")
-	rootCmd.PersistentFlags().Float64VarP(&fps, "framerate", "f", 30, "The framerate of the game for termloop")
+	rootCmd.PersistentFlags().Float64Var(&fps, "framerate", 30, "The framerate of the game for termloop")
 
 	//Commands
 	rootCmd.AddCommand(versionCmd)
@@ -86,9 +86,10 @@ var versionCmd = &cobra.Command{
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start",
-	Short: "Starts the game",
-	Long:  "Starts the game",
+	Use:     "start",
+	Short:   "Starts the game",
+	Long:    "Starts the game",
+	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
 		instance := tl.NewGame()
 		instance.Screen().SetFps(fps)
