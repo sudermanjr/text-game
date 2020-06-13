@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	tl "github.com/JoelOtter/termloop"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/klog"
@@ -91,11 +90,6 @@ var startCmd = &cobra.Command{
 	Long:    "Starts the game",
 	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
-		instance := tl.NewGame()
-		instance.Screen().SetFps(fps)
-		level := game.BuildLevel(instance, width, height)
-
-		instance.Screen().SetLevel(level)
-		instance.Start()
+		game.New(width, height, fps).Start()
 	},
 }

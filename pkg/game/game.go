@@ -12,22 +12,6 @@ var (
 	doorChar   = '+'
 )
 
-// WallBlock is a single wall block element
-type WallBlock struct {
-	*tl.Entity
-	level *tl.BaseLevel
-}
-
-// Draw is draw function that creates wall blocks
-func (wallblock *WallBlock) Draw(screen *tl.Screen) {
-	wallblock.SetCell(0, 0,
-		&tl.Cell{
-			Ch: wallChar,
-			Fg: tl.ColorWhite,
-		})
-	wallblock.Entity.Draw(screen)
-}
-
 func newLevelData(w, h int) [][]rune {
 	var GameMap *dngn.Room
 	GameMap = dngn.NewRoom(w, h)
@@ -60,8 +44,8 @@ func newLevelData(w, h int) [][]rune {
 	return GameMap.Data
 }
 
-// BuildLevel builds the level for the player
-func BuildLevel(g *tl.Game, w, h int) *tl.BaseLevel {
+// newLevel builds a new level for the game
+func newLevel(g *tl.Game, w, h int) *tl.BaseLevel {
 	layout := newLevelData(w, h)
 	l := tl.NewBaseLevel(tl.Cell{
 		Bg: tl.ColorBlack,
@@ -90,4 +74,14 @@ func BuildLevel(g *tl.Game, w, h int) *tl.BaseLevel {
 		}
 	}
 	return l
+}
+
+// New builds a new game and returns it
+func New(w int, h int, fps float64) *tl.Game {
+	instance := tl.NewGame()
+	instance.Screen().SetFps(fps)
+	level := newLevel(instance, w, h)
+
+	instance.Screen().SetLevel(level)
+	return instance
 }
