@@ -11,20 +11,32 @@ import (
 // The player is the base of the entire game
 type Player struct {
 	*tl.Entity
-	Name         string
-	prevX        int
-	prevY        int
-	Char         rune
-	Color        tl.Attr
-	Text         *tl.Text
-	BaseText     string
-	CurrentLevel int
-	Game         *tl.Game
-	Width        int
-	Height       int
-	ShowFPS      bool
-	Fps          float64
-	MapType      string
+	// Name is the name of the character
+	Name  string `json:"name"`
+	prevX int
+	prevY int
+	// Char is the character used to represent the player. Usually @
+	Char rune `json:"char"`
+	// Color is the color of the character player
+	Color tl.Attr `json:"color"`
+	// Text is the text object that holds status
+	Text *tl.Text `json:"text"`
+	// BaseText is what always shows up in the message
+	BaseText string `json:"baseText"`
+	// CurrentLevel is what level the character is on
+	CurrentLevel int `json:"currentLevel"`
+	// Game is the game object for the character
+	Game *tl.Game `json:"game"`
+	// Width the level width
+	Width int `json:"width"`
+	// Height is the level height
+	Height int `json:"height"`
+	// ShowFPS controls whether the fps message is shown
+	ShowFPS bool `json:"showFPS"`
+	// FPS is the game setting fps
+	Fps float64 `json:"fps"`
+	// MapType is the type of levels generated. Noramlly rooms
+	MapType string `json:"mapType"`
 }
 
 // Collide is the player's collision processing
