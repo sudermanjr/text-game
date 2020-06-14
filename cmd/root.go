@@ -90,5 +90,6 @@ var startCmd = &cobra.Command{
 		}
 		game.Run()
 		klog.Flush()
+		fmt.Println("Thanks for playing!")
 	},
 }

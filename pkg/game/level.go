@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"math/rand"
 
 	tl "github.com/JoelOtter/termloop"
@@ -105,8 +104,7 @@ func newRoomLevel(level *dngn.Room) {
 	// Build the outer walls
 	selection.RemoveSelection(selection.ByArea(1, 1, level.Width-2, level.Height-2)).Fill('W')
 
-	klog.V(8).Info("room generation complete")
-	fmt.Println(level.DataToString())
+	klog.V(4).Info("room generation complete")
 }
 
 func placePlayer(level *dngn.Room) {
@@ -204,9 +202,8 @@ func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
 				l.AddEntity(wall)
 			case '@':
 				klog.V(8).Infof("setting player at %d, %d", j, i)
-				text := tl.NewText(0, h+1, "Welcome!", tl.ColorCyan, tl.ColorBlack)
-				g.Screen().AddEntity(text)
-				player := NewPlayer(j, i, playerChar, text)
+				player := NewPlayer(j, i, playerChar, h)
+				g.Screen().AddEntity(player.text)
 				l.AddEntity(player)
 			case 'D':
 				klog.V(8).Infof("adding door at %d, %d", j, i)

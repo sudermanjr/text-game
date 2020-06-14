@@ -1,6 +1,8 @@
 package game
 
 import (
+	"fmt"
+
 	tl "github.com/JoelOtter/termloop"
 )
 
@@ -71,9 +73,9 @@ func (player *Player) Draw(screen *tl.Screen) {
 
 // Tick is the player control
 func (player *Player) Tick(event tl.Event) {
-	if event.Type == tl.EventKey { // Is it a keyboard event?
+	if event.Type == tl.EventKey {
 		player.prevX, player.prevY = player.Position()
-		switch event.Key { // If so, switch on the pressed key.
+		switch event.Key {
 		case tl.KeyArrowRight:
 			player.SetPosition(player.prevX+1, player.prevY)
 		case tl.KeyArrowLeft:
@@ -87,17 +89,18 @@ func (player *Player) Tick(event tl.Event) {
 }
 
 // NewPlayer generates a new character
-func NewPlayer(x int, y int, char rune, text *tl.Text) *Player {
+func NewPlayer(x int, y int, char rune, screenHeight int) *Player {
 	player := &Player{
 		Entity:       tl.NewEntity(x, y, 1, 1),
 		color:        tl.ColorRed,
-		text:         text,
 		currentLevel: 0,
 		baseText:     "",
+		text:         tl.NewText(0, screenHeight+1, "", tl.ColorCyan, tl.ColorBlack),
 	}
 	return player
 }
 
 func (player *Player) setMessage(message string) {
-	player.text.SetText(player.baseText + message)
+	text := fmt.Sprintf("%s Level:%d       %s", player.baseText, player.currentLevel, message)
+	player.text.SetText(text)
 }
