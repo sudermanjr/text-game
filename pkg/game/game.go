@@ -12,6 +12,10 @@ var (
 	playerChar     = '@'
 	closedDoorChar = '+'
 	openDoorChar   = '/'
+	doorColor      = tl.ColorWhite
+	stairColor     = tl.ColorGreen
+	wallColor      = tl.ColorWhite
+	bgColor        = tl.ColorBlack
 )
 
 // New builds a new game and returns it

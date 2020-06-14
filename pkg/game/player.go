@@ -59,6 +59,12 @@ func (player *Player) Tick(event tl.Event) {
 			player.SetPosition(player.prevX, player.prevY-1)
 		case tl.KeyArrowDown:
 			player.SetPosition(player.prevX, player.prevY+1)
+		case tl.KeyEnter:
+			player.Interact()
 		}
 	}
+}
+
+func (player *Player) Interact() {
+
 }
