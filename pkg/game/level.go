@@ -173,13 +173,14 @@ func newLevelData(w, h int, levelType string) [][]rune {
 }
 
 // newLevel builds a new level for the game
-func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
-	layout := newLevelData(w, h, mapType)
+func (player *Player) newLevel() {
+	player.CurrentLevel = player.CurrentLevel + 1
+	layout := newLevelData(player.Width, player.Height, player.MapType)
 	l := tl.NewBaseLevel(tl.Cell{
 		Bg: tl.ColorBlack,
 	})
-	g.Screen().SetLevel(l)
-	g.Log("Building level with width %d and height %d", w, h)
+	player.Game.Screen().SetLevel(l)
+	klog.V(2).Infof("Building level with width %d and height %d", player.Width, player.Height)
 
 	for i, row := range layout {
 		for j, y := range row {
@@ -202,8 +203,7 @@ func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
 				l.AddEntity(wall)
 			case '@':
 				klog.V(8).Infof("setting player at %d, %d", j, i)
-				player := NewPlayer(j, i, playerChar, h)
-				g.Screen().AddEntity(player.text)
+				player.Entity.SetPosition(j, i)
 				l.AddEntity(player)
 			case 'D':
 				klog.V(8).Infof("adding door at %d, %d", j, i)
@@ -231,5 +231,4 @@ func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
 			}
 		}
 	}
-	return l
 }

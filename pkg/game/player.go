@@ -4,18 +4,27 @@ import (
 	"fmt"
 
 	tl "github.com/JoelOtter/termloop"
+	"k8s.io/klog"
 )
 
 // Player is the player struct for the main player
+// The player is the base of the entire game
 type Player struct {
 	*tl.Entity
+	Name         string
 	prevX        int
 	prevY        int
-	color        tl.Attr
-	level        *tl.BaseLevel
-	text         *tl.Text
-	baseText     string
-	currentLevel int
+	Char         rune
+	Color        tl.Attr
+	Text         *tl.Text
+	BaseText     string
+	CurrentLevel int
+	Game         *tl.Game
+	Width        int
+	Height       int
+	ShowFPS      bool
+	Fps          float64
+	MapType      string
 }
 
 // Collide is the player's collision processing
@@ -52,8 +61,17 @@ func (player *Player) Collide(collision tl.Physical) {
 		case false:
 			player.setMessage("a staircase leading up")
 		}
-
 	}
+
+	// //Hallway
+	// if _, ok := collision.(*HallwayTile); ok {
+	// 	player.setMessage("an empty hallway space")
+	// }
+
+	// //Room
+	// if _, ok := collision.(*RoomTile); ok {
+	// 	player.setMessage("an empty room space")
+	// }
 }
 
 // Draw is the draw function for the player
@@ -65,8 +83,8 @@ func (player *Player) Draw(screen *tl.Screen) {
 
 	// Set the player color
 	player.SetCell(0, 0, &tl.Cell{
-		Fg: player.color,
-		Ch: playerChar,
+		Fg: player.Color,
+		Ch: player.Char,
 	})
 	player.Entity.Draw(screen)
 }
@@ -74,6 +92,7 @@ func (player *Player) Draw(screen *tl.Screen) {
 // Tick is the player control
 func (player *Player) Tick(event tl.Event) {
 	if event.Type == tl.EventKey {
+		klog.V(7).Infof("pressed key: %v %s", event.Key, string(event.Ch))
 		player.prevX, player.prevY = player.Position()
 		switch event.Key {
 		case tl.KeyArrowRight:
@@ -84,23 +103,53 @@ func (player *Player) Tick(event tl.Event) {
 			player.SetPosition(player.prevX, player.prevY-1)
 		case tl.KeyArrowDown:
 			player.SetPosition(player.prevX, player.prevY+1)
+		case 0:
+			switch event.Ch {
+			case '>':
+				player.setMessage("going down")
+			case '<':
+				player.setMessage("going up")
+			case 'c':
+				player.setMessage("close a door")
+			}
 		}
 	}
 }
 
 // NewPlayer generates a new character
-func NewPlayer(x int, y int, char rune, screenHeight int) *Player {
+func NewPlayer(char rune, height int, width int, name string, mapType string, fps float64) *Player {
 	player := &Player{
-		Entity:       tl.NewEntity(x, y, 1, 1),
-		color:        tl.ColorRed,
-		currentLevel: 0,
-		baseText:     "",
-		text:         tl.NewText(0, screenHeight+1, "", tl.ColorCyan, tl.ColorBlack),
+		Entity:       tl.NewEntity(0, 0, 1, 1),
+		Color:        tl.ColorRed,
+		CurrentLevel: 0,
+		BaseText:     string(char) + name,
+		Text:         tl.NewText(0, height+1, "", tl.ColorCyan, tl.ColorBlack),
+		Game:         tl.NewGame(),
+		Width:        width,
+		Height:       height,
+		MapType:      mapType,
+		Fps:          fps,
+		Char:         char,
 	}
+	player.Game.Screen().SetFps(fps)
+	player.newLevel()
+	player.Game.Screen().AddEntity(player.Text)
+
+	player.setMessage("Welcome to the game!")
 	return player
 }
 
 func (player *Player) setMessage(message string) {
-	text := fmt.Sprintf("%s Level:%d       %s", player.baseText, player.currentLevel, message)
-	player.text.SetText(text)
+	text := fmt.Sprintf("%s Level:%d       %s", player.BaseText, player.CurrentLevel, message)
+	player.Text.SetText(text)
+}
+
+// Start starts the game
+func (player *Player) Start() {
+
+	if player.ShowFPS {
+		player.Game.Screen().AddEntity(tl.NewFpsText(0, 0, tl.ColorRed, tl.ColorDefault, 0.5))
+	}
+	klog.V(6).Info("starting the game")
+	player.Game.Start()
 }

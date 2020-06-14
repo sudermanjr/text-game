@@ -80,15 +80,9 @@ var startCmd = &cobra.Command{
 	Long:    "Starts the game",
 	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
+		player := game.NewPlayer('@', height, width, "Andy", mapType, fps)
+		player.Start()
 
-		game := &game.Instance{
-			Width:   width,
-			Height:  height,
-			Fps:     fps,
-			MapType: mapType,
-			ShowFPS: showFPS,
-		}
-		game.Run()
 		klog.Flush()
 		fmt.Println("Thanks for playing!")
 	},
