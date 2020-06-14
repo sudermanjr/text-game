@@ -19,34 +19,19 @@ var (
 	width   int
 	fps     float64
 	mapType string
+	showFPS bool
 )
 
 func init() {
-	// Flags
-	rootCmd.PersistentFlags().IntVar(&height, "height", 70, "The height of the arena.")
-	rootCmd.PersistentFlags().IntVar(&width, "width", 250, "The width of the arena.")
-	rootCmd.PersistentFlags().Float64Var(&fps, "framerate", 30, "The framerate of the game for termloop")
-	rootCmd.PersistentFlags().StringVar(&mapType, "map-type", "rooms", "The type of map. Must be one of (bsp|drunkwalk|rooms)")
-
 	//Commands
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(startCmd)
 
-	environmentVariables := map[string]string{
-		"GAME_HEIGHT": "height",
-		"GAME_WIDTH":  "width",
-	}
-
-	for env, flag := range environmentVariables {
-		flag := rootCmd.PersistentFlags().Lookup(flag)
-		flag.Usage = fmt.Sprintf("%v [%v]", flag.Usage, env)
-		if value := os.Getenv(env); value != "" {
-			err := flag.Value.Set(value)
-			if err != nil {
-				klog.Errorf("Error setting flag %v to %s from environment variable %s", flag, value, env)
-			}
-		}
-	}
+	startCmd.PersistentFlags().IntVar(&height, "height", 70, "The height of the arena.")
+	startCmd.PersistentFlags().IntVar(&width, "width", 200, "The width of the arena.")
+	startCmd.PersistentFlags().Float64Var(&fps, "framerate", 30, "The framerate of the game for termloop")
+	startCmd.PersistentFlags().StringVar(&mapType, "map-type", "rooms", "The type of map. Must be one of (bsp|drunkwalk|rooms)")
+	startCmd.PersistentFlags().BoolVar(&showFPS, "show-fps", false, "Enables the FPS text")
 
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "false")
@@ -95,9 +80,15 @@ var startCmd = &cobra.Command{
 	Long:    "Starts the game",
 	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("building new level...")
-		klog.Infof("game started")
-		game.New(width, height, fps, mapType).Start()
+
+		game := &game.Instance{
+			Width:   width,
+			Height:  height,
+			Fps:     fps,
+			MapType: mapType,
+			ShowFPS: showFPS,
+		}
+		game.Run()
 		klog.Flush()
 	},
 }

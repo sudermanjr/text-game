@@ -204,18 +204,17 @@ func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
 				l.AddEntity(wall)
 			case '@':
 				klog.V(8).Infof("setting player at %d, %d", j, i)
-				player := Player{
-					Entity: tl.NewEntity(j, i, 1, 1),
-					level:  l,
-					color:  tl.ColorRed,
-				}
-				l.AddEntity(&player)
+				text := tl.NewText(0, h+1, "Welcome!", tl.ColorCyan, tl.ColorBlack)
+				g.Screen().AddEntity(text)
+				player := NewPlayer(j, i, playerChar, text)
+				l.AddEntity(player)
 			case 'D':
 				klog.V(8).Infof("adding door at %d, %d", j, i)
 				door := &Door{
 					Entity: tl.NewEntity(j, i, 1, 1),
 					level:  l,
 					open:   utils.RandomBool(),
+					locked: utils.RandomBool(),
 				}
 				l.AddEntity(door)
 			case '>':

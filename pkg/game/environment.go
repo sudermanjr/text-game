@@ -71,27 +71,3 @@ func (wallblock *WallBlock) Draw(screen *tl.Screen) {
 		})
 	wallblock.Entity.Draw(screen)
 }
-
-// Door is a door entity
-type Door struct {
-	*tl.Entity
-	level *tl.BaseLevel
-	open  bool
-}
-
-// Draw is the draw function for doors
-func (door *Door) Draw(screen *tl.Screen) {
-	switch door.open {
-	case true:
-		door.SetCell(0, 0, &tl.Cell{
-			Ch: openDoorChar,
-			Fg: doorColor,
-		})
-	case false:
-		door.SetCell(0, 0, &tl.Cell{
-			Ch: closedDoorChar,
-			Fg: doorColor,
-		})
-	}
-	door.Entity.Draw(screen)
-}

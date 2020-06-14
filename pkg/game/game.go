@@ -5,6 +5,15 @@ import (
 	"k8s.io/klog"
 )
 
+// Instance is all the config necessary for running the game
+type Instance struct {
+	Width   int
+	Height  int
+	Fps     float64
+	MapType string
+	ShowFPS bool
+}
+
 // Package variables to control the look and feel
 var (
 	floorChar      = '.'
@@ -18,14 +27,17 @@ var (
 	bgColor        = tl.ColorBlack
 )
 
-// New builds a new game and returns it
-func New(w int, h int, fps float64, mapType string) *tl.Game {
-	instance := tl.NewGame()
+// Run sets up and starts a game instance
+func (instance *Instance) Run() {
+	g := tl.NewGame()
+	g.Screen().SetFps(instance.Fps)
+	level := newLevel(g, instance.Width, instance.Height, instance.MapType)
 
-	instance.Screen().SetFps(fps)
-	level := newLevel(instance, w, h, mapType)
+	g.Screen().SetLevel(level)
 
-	instance.Screen().SetLevel(level)
-	klog.V(6).Info("returning instance of game to be started")
-	return instance
+	if instance.ShowFPS {
+		g.Screen().AddEntity(tl.NewFpsText(0, 0, tl.ColorRed, tl.ColorDefault, 0.5))
+	}
+	klog.V(6).Info("starting the game")
+	g.Start()
 }
