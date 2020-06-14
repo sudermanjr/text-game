@@ -70,6 +70,7 @@ func (player *Player) Collide(collision tl.Physical) {
 		switch collision.(*StairCase).down {
 		case true:
 			player.setMessage("a staircase leading down")
+			player.newLevel()
 		case false:
 			player.setMessage("a staircase leading up")
 		}
