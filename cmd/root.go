@@ -23,8 +23,8 @@ var (
 
 func init() {
 	// Flags
-	rootCmd.PersistentFlags().IntVar(&height, "height", 80, "The height of the arena")
-	rootCmd.PersistentFlags().IntVar(&width, "width", 200, "The width of the arena")
+	rootCmd.PersistentFlags().IntVar(&height, "height", 70, "The height of the arena.")
+	rootCmd.PersistentFlags().IntVar(&width, "width", 250, "The width of the arena.")
 	rootCmd.PersistentFlags().Float64Var(&fps, "framerate", 30, "The framerate of the game for termloop")
 	rootCmd.PersistentFlags().StringVar(&mapType, "map-type", "rooms", "The type of map. Must be one of (bsp|drunkwalk|rooms)")
 
@@ -49,6 +49,9 @@ func init() {
 	}
 
 	klog.InitFlags(nil)
+	flag.Set("logtostderr", "false")
+	flag.Set("log_file", "game.log")
+
 	flag.Parse()
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 }
@@ -92,6 +95,9 @@ var startCmd = &cobra.Command{
 	Long:    "Starts the game",
 	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("building new level...")
+		klog.Infof("game started")
 		game.New(width, height, fps, mapType).Start()
+		klog.Flush()
 	},
 }

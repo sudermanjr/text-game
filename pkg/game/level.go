@@ -1,6 +1,8 @@
 package game
 
 import (
+	"math/rand"
+
 	tl "github.com/JoelOtter/termloop"
 	"github.com/SolarLune/dngn"
 	"k8s.io/klog"
@@ -9,6 +11,7 @@ import (
 )
 
 func newBSPLevel(level *dngn.Room, splits int) {
+	klog.V(5).Info("building new bsp level")
 	// Selections are structs, so we can store Selections in variables to store the "view" of the data.
 	selection := level.Select()
 	selection.Fill('F')
@@ -24,73 +27,85 @@ func newBSPLevel(level *dngn.Room, splits int) {
 }
 
 func newDrunkWalkLevel(level *dngn.Room, pct float32) {
+	klog.V(5).Info("building new drunkwalk level")
 	selection := level.Select()
 	selection.Fill('W')
 
 	level.GenerateDrunkWalk('F', pct)
+
 	// Build the outer walls
 	selection.RemoveSelection(selection.ByArea(1, 1, level.Width-2, level.Height-2)).Fill('W')
 }
 
 func newRoomLevel(level *dngn.Room) {
+	xidx := 0
+	yidx := 1
+	klog.V(5).Info("building new rooms level")
 	selection := level.Select()
 	selection.Fill('W')
 
-	// numRooms := rand.Intn(10) + 10
-	numRooms := 2
-	roomPositions := level.GenerateRandomRooms('F', numRooms, 5, 5, 20, 20, false)
+	// level.SetSeed(10)
 
+	numRooms := rand.Intn(12) + 6
+	// numRooms = 3
+	roomPositions := level.GenerateRandomRooms('F', numRooms, 5, 5, 10, 10, false)
+
+	klog.V(9).Infof("room positions: %v", roomPositions)
 	klog.V(5).Info("attempting to connect rooms")
-	for p := 0; p < len(roomPositions); p++ {
-		if p < len(roomPositions)-1 {
-			var (
-				x  int
-				y  int
-				x2 int
-				y2 int
-			)
 
-			room1Selection := level.SelectContiguous(roomPositions[p][0], roomPositions[p][1])
-			room2Selection := level.SelectContiguous(roomPositions[p+1][0], roomPositions[p+1][1])
-			var roomsConnected = false
-			for _, room1Coord := range room1Selection.Cells {
-				for _, room2Coord := range room2Selection.Cells {
-					if room1Coord[0] == room2Coord[0] {
-						x = room1Coord[0]
-						y = room1Coord[1]
-						x2 = room1Coord[0]
-						y2 = room2Coord[1]
+	for a, room1 := range roomPositions {
+		var (
+			x  int
+			y  int
+			x2 int
+			y2 int
+		)
+		for b, room2 := range roomPositions {
+			if a == b {
+				break
+			}
+			var connected bool = false
+			klog.V(7).Infof("checking room connections between room %d and %d", a, b)
+			klog.V(6).Infof("a: %v, b: %v", room1, room2)
+			room1Cells := level.SelectContiguous(room1[xidx], room1[yidx]).Cells
+			room2Cells := level.SelectContiguous(room2[xidx], room2[yidx]).Cells
+
+			for _, room1Coord := range room1Cells {
+				for _, room2Coord := range room2Cells {
+					klog.V(8).Infof("room1: %v - room2: %v", room1Coord, room2Coord)
+					if room1Coord[xidx] == room2Coord[xidx] || room1Coord[yidx] == room2Coord[yidx] {
+						x = room1Coord[xidx]
+						y = room1Coord[yidx]
+						x2 = room2Coord[xidx]
+						y2 = room2Coord[yidx]
 						level.DrawLine(x, y, x2, y2, 'F', 1, false)
-						roomsConnected = true
-					}
-					if room1Coord[1] == room2Coord[1] {
-						x = room1Coord[0]
-						y = room1Coord[1]
-						x2 = room2Coord[0]
-						y2 = room2Coord[1]
-						level.DrawLine(x, y, x2, y2, 'F', 1, false)
-						roomsConnected = true
-					}
-					if roomsConnected {
+						klog.V(5).Infof("connected room %d to room %d via %v %v", a, b, room1Coord, room2Coord)
+						connected = true
 						break
 					}
 				}
-				if roomsConnected {
+				if connected {
 					break
 				}
 			}
-			// x := roomPositions[p][0]
-			// y := roomPositions[p][1]
-
-			// x2 := roomPositions[p+1][0]
-			// y2 := roomPositions[p+1][1]
-
 		}
 	}
-	klog.V(5).Info("done connecting rooms")
+
+	// klog.V(5).Info("done connecting rooms")
 
 	// Build the outer walls
 	selection.RemoveSelection(selection.ByArea(1, 1, level.Width-2, level.Height-2)).Fill('W')
+	klog.V(8).Info("built outer walls. room generation complete")
+}
+
+func placePlayer(level *dngn.Room) {
+	openFloor := level.Select().ByRune('F')
+	randomFloor := rand.Intn(len(openFloor.Cells))
+	randomX := openFloor.Cells[randomFloor][0]
+	randomY := openFloor.Cells[randomFloor][1]
+
+	klog.V(4).Infof("Placing player at random location: %d, %d", randomX, randomY)
+	level.Set(randomX, randomY, '@')
 }
 
 func newLevelData(w, h int, levelType string) [][]rune {
@@ -105,19 +120,7 @@ func newLevelData(w, h int, levelType string) [][]rune {
 	case "rooms":
 		newRoomLevel(GameMap)
 	}
-
-	// Pick a player starting position
-	// Currently this is just the center or as near to it as we can get.
-	// TODO: Find a better way to do this
-	centerX, centerY := GameMap.Center()
-	for {
-		if GameMap.Get(centerX, centerY) == 'F' {
-			GameMap.Set(centerX, centerY, '@')
-			break
-		}
-		centerX = centerX + 1
-		centerY = centerY + 1
-	}
+	placePlayer(GameMap)
 	return GameMap.Data
 }
 
@@ -134,12 +137,14 @@ func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
 		for j, y := range row {
 			switch y {
 			case 'W':
+				klog.V(10).Infof("adding wall at %d, %d", j, i)
 				wall := &WallBlock{
 					Entity: tl.NewEntity(j, i, 1, 1),
 					level:  l,
 				}
 				l.AddEntity(wall)
 			case '@':
+				klog.V(8).Infof("setting player at %d, %d", j, i)
 				player := Player{
 					Entity: tl.NewEntity(j, i, 1, 1),
 					level:  l,
@@ -147,6 +152,7 @@ func newLevel(g *tl.Game, w, h int, mapType string) *tl.BaseLevel {
 				}
 				l.AddEntity(&player)
 			case 'D':
+				klog.V(8).Infof("adding door at %d, %d", j, i)
 				door := &Door{
 					Entity: tl.NewEntity(j, i, 1, 1),
 					level:  l,
