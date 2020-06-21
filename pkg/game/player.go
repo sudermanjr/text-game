@@ -36,7 +36,9 @@ type Player struct {
 	// FPS is the game setting fps
 	Fps float64 `json:"fps"`
 	// MapType is the type of levels generated. Noramlly rooms
-	MapType string `json:"mapType"`
+	MapType    string `json:"mapType"`
+	CustomSeed int64
+	NumRooms   int
 }
 
 // Collide is the player's collision processing
@@ -130,7 +132,7 @@ func (player *Player) Tick(event tl.Event) {
 }
 
 // NewPlayer generates a new character
-func NewPlayer(char rune, height int, width int, name string, mapType string, fps float64) *Player {
+func NewPlayer(char rune, height int, width int, name string, mapType string, fps float64, customSeed int64, numRooms int) *Player {
 	player := &Player{
 		Entity:       tl.NewEntity(0, 0, 1, 1),
 		Color:        tl.ColorRed,
@@ -143,6 +145,8 @@ func NewPlayer(char rune, height int, width int, name string, mapType string, fp
 		MapType:      mapType,
 		Fps:          fps,
 		Char:         char,
+		CustomSeed:   customSeed,
+		NumRooms:     numRooms,
 	}
 	player.Game.Screen().SetFps(fps)
 	player.newLevel()

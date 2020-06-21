@@ -13,13 +13,15 @@ import (
 )
 
 var (
-	version = "development"
-	commit  = "n/a"
-	height  int
-	width   int
-	fps     float64
-	mapType string
-	showFPS bool
+	version    = "development"
+	commit     = "n/a"
+	height     int
+	width      int
+	fps        float64
+	mapType    string
+	showFPS    bool
+	customSeed int64
+	numRooms   int
 )
 
 func init() {
@@ -30,8 +32,10 @@ func init() {
 	startCmd.PersistentFlags().IntVar(&height, "height", 70, "The height of the arena.")
 	startCmd.PersistentFlags().IntVar(&width, "width", 200, "The width of the arena.")
 	startCmd.PersistentFlags().Float64Var(&fps, "framerate", 30, "The framerate of the game for termloop")
-	startCmd.PersistentFlags().StringVar(&mapType, "map-type", "rooms", "The type of map. Must be one of (bsp|drunkwalk|rooms)")
+	startCmd.PersistentFlags().StringVar(&mapType, "map-type", "rooms", "The type of map. Must be one of (drunkwalk|rooms)")
 	startCmd.PersistentFlags().BoolVar(&showFPS, "show-fps", false, "Enables the FPS text")
+	startCmd.PersistentFlags().Int64VarP(&customSeed, "seed", "s", 0, "If non-zero, use this seed for the level generation. 0 will cause a random seed to be used.")
+	startCmd.PersistentFlags().IntVarP(&numRooms, "room-count", "n", 0, "If non-zero, the number of rooms in a room-type map.")
 
 	klog.InitFlags(nil)
 	flag.Set("logtostderr", "false")
@@ -80,7 +84,7 @@ var startCmd = &cobra.Command{
 	Long:    "Starts the game",
 	Aliases: []string{"run"},
 	Run: func(cmd *cobra.Command, args []string) {
-		player := game.NewPlayer('@', height, width, "Andy", mapType, fps)
+		player := game.NewPlayer('@', height, width, "Andy", mapType, fps, customSeed, numRooms)
 		player.Start()
 
 		klog.Flush()

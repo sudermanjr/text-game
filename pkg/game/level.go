@@ -1,6 +1,7 @@
 package game
 
 import (
+	"math"
 	"math/rand"
 
 	tl "github.com/JoelOtter/termloop"
@@ -37,26 +38,73 @@ func newDrunkWalkLevel(level *dngn.Room, pct float32) {
 	selection.RemoveSelection(selection.ByArea(1, 1, level.Width-2, level.Height-2)).Fill('W')
 }
 
-func newRoomLevel(level *dngn.Room) {
+func newRoomLevel(room *dngn.Room, numRooms int) {
 	xidx := 0
 	yidx := 1
-	klog.V(5).Info("building new rooms level")
-	selection := level.Select()
+	selection := room.Select()
 	selection.Fill(' ')
 
-	numRooms := rand.Intn(12) + 6
+	var roomCount int
+	if numRooms == 0 {
+		roomCount = rand.Intn(12) + 6
+	} else {
+		roomCount = numRooms
+	}
+	klog.V(3).Infof("room count: %d", roomCount)
+
+	roomMinWidth := 5
+	roomMaxWidth := 10
+	roomMinHeight := 5
+	roomMaxHeight := 10
+	roomFillRune := 'R'
+	hallwayFillRune := 'H'
+
+	klog.V(3).Infof("building new rooms level with %d rooms", roomCount)
 
 	// Set these for debugging room creation
-	// level.SetSeed(11)
-	// numRooms = 3
-	roomPositions := level.GenerateRandomRooms('R', numRooms, 5, 5, 10, 10, false)
+	klog.V(3).Infof("custom seed: %t", room.CustomSeed)
 
-	klog.V(9).Infof("room positions: %v", roomPositions)
-	klog.V(5).Info("attempting to generate hallways")
+	roomPositions := make([][]int, 0)
+
+ROOM_GEN:
+	for i := 0; i < roomCount; i++ {
+		sx := rand.Intn(room.Width)
+		sy := rand.Intn(room.Height)
+
+		roomPositions = append(roomPositions, []int{sx, sy})
+
+		roomW := roomMinWidth + rand.Intn(roomMaxWidth-roomMinWidth)
+		roomH := roomMinHeight + rand.Intn(roomMaxHeight-roomMinHeight)
+
+		drawRoom := func(x, y int) bool {
+			dx := int(math.Abs(float64(sx) - float64(x)))
+			dy := int(math.Abs(float64(sy) - float64(y)))
+			if dx < roomW && dy < roomH {
+				room.Set(x, y, roomFillRune)
+			}
+			return true
+		}
+
+		overlap := room.Select().ByArea(sx, sy, roomW, roomH).ByRune(roomFillRune)
+		if len(overlap.Cells) > 0 {
+			// The room overlaps with an existng one and that's not allowed
+			klog.V(3).Info("skipping overlapping room")
+			continue
+		}
+		room.Select().By(drawRoom)
+	}
+
+	if len(room.Select().ByRune(roomFillRune).Cells) < roomCount-2 {
+		klog.V(3).Infof("no rooms generated. going back and trying again")
+		goto ROOM_GEN
+	}
+
+	klog.V(3).Infof("room positions: %v", roomPositions)
+	klog.V(3).Info("attempting to generate hallways")
 
 	roomMap := make(map[int]dngn.Selection)
-	for idx, room := range roomPositions {
-		roomMap[idx] = level.SelectContiguous(room[xidx], room[yidx])
+	for idx, r := range roomPositions {
+		roomMap[idx] = room.SelectContiguous(r[xidx], r[yidx])
 	}
 
 	for a, room1 := range roomPositions {
@@ -82,7 +130,7 @@ func newRoomLevel(level *dngn.Room) {
 						y = room1Coord[yidx]
 						x2 = room2Coord[xidx]
 						y2 = room2Coord[yidx]
-						level.DrawLine(x, y, x2, y2, 'H', 1, false)
+						room.DrawLine(x, y, x2, y2, hallwayFillRune, 1, false)
 						klog.V(5).Infof("connected room %d to room %d via %v %v", a, b, room1Coord, room2Coord)
 						connected = true
 						break
@@ -95,14 +143,14 @@ func newRoomLevel(level *dngn.Room) {
 		}
 	}
 	// Fix up the rooms to clear out errant hallways
-	for _, room := range roomMap {
-		room.Fill('R')
+	for _, r := range roomMap {
+		r.Fill(roomFillRune)
 	}
 
 	klog.V(5).Info("done connecting rooms")
 
 	// Build the outer walls
-	selection.RemoveSelection(selection.ByArea(1, 1, level.Width-2, level.Height-2)).Fill('W')
+	selection.RemoveSelection(selection.ByArea(1, 1, room.Width-2, room.Height-2)).Fill('W')
 
 	klog.V(4).Info("room generation complete")
 }
@@ -154,9 +202,14 @@ func placeDoors(level *dngn.Room) {
 	doorLocations.ByPercentage(.5).Fill('D')
 }
 
-func newLevelData(w, h int, levelType string) [][]rune {
+func newLevelData(w, h int, levelType string, customSeed int64, numRooms int) [][]rune {
 	var GameMap *dngn.Room
 	GameMap = dngn.NewRoom(w, h)
+
+	if customSeed != 0 {
+		klog.V(3).Infof("using custom seed: %d", customSeed)
+		GameMap.SetSeed(customSeed)
+	}
 
 	switch levelType {
 	case "bsp":
@@ -164,7 +217,7 @@ func newLevelData(w, h int, levelType string) [][]rune {
 	case "drunkwalk":
 		newDrunkWalkLevel(GameMap, 0.5)
 	case "rooms":
-		newRoomLevel(GameMap)
+		newRoomLevel(GameMap, numRooms)
 	}
 	placePlayer(GameMap)
 	placeStaircase(GameMap, true)
@@ -175,7 +228,7 @@ func newLevelData(w, h int, levelType string) [][]rune {
 // newLevel builds a new level for the game
 func (player *Player) newLevel() {
 	player.CurrentLevel = player.CurrentLevel + 1
-	layout := newLevelData(player.Width, player.Height, player.MapType)
+	layout := newLevelData(player.Width, player.Height, player.MapType, player.CustomSeed, player.NumRooms)
 	l := tl.NewBaseLevel(tl.Cell{
 		Bg: tl.ColorBlack,
 	})
